@@ -1,1 +1,128 @@
-loadstring(game:HttpGet("https://pastefy.app/cAkv4KcV"))()
+-- Ladebildschirm GUI erstellen
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CustomLoadingScreen"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.DisplayOrder = 999999
+ScreenGui.Parent = game:GetService("CoreGui") -- oder PlayerGui
+
+-- Schwarzer Hintergrund
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.Position = UDim2.new(0, 0, 0, 0)
+bg.BackgroundColor3 = Color3.new(0, 0, 0)
+bg.BackgroundTransparency = 0
+bg.ZIndex = 999999
+bg.Parent = ScreenGui
+
+-- Status-Text
+local loadingText = Instance.new("TextLabel")
+loadingText.Size = UDim2.new(0.6, 0, 0.1, 0)
+loadingText.Position = UDim2.new(0.2, 0, 0.35, 0)
+loadingText.BackgroundTransparency = 1
+loadingText.Text = "Loading..."
+loadingText.Font = Enum.Font.SourceSansBold
+loadingText.TextSize = 40
+loadingText.TextColor3 = Color3.new(1, 1, 1)
+loadingText.ZIndex = 1000000
+loadingText.Parent = bg
+
+-- Prozentanzeige
+local percentText = Instance.new("TextLabel")
+percentText.Size = UDim2.new(0.2, 0, 0.05, 0)
+percentText.Position = UDim2.new(0.4, 0, 0.45, 0)
+percentText.BackgroundTransparency = 1
+percentText.Text = "0%"
+percentText.Font = Enum.Font.SourceSans
+percentText.TextSize = 28
+percentText.TextColor3 = Color3.new(1, 1, 1)
+percentText.ZIndex = 1000000
+percentText.Parent = bg
+
+-- Ladebalken Hintergrund
+local barBackground = Instance.new("Frame")
+barBackground.Size = UDim2.new(0.6, 0, 0.05, 0)
+barBackground.Position = UDim2.new(0.2, 0, 0.55, 0)
+barBackground.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+barBackground.BorderSizePixel = 0
+barBackground.ZIndex = 1000000
+barBackground.Parent = bg
+
+-- Ladebalken
+local loadingBar = Instance.new("Frame")
+loadingBar.Size = UDim2.new(0, 0, 1, 0)
+loadingBar.Position = UDim2.new(0, 0, 0, 0)
+loadingBar.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+loadingBar.BorderSizePixel = 0
+loadingBar.ZIndex = 1000001
+loadingBar.Parent = barBackground
+
+-- Ladesymbol als Punkte-Kreis
+local loadingIcon = Instance.new("Frame")
+loadingIcon.Size = UDim2.new(0, 50, 0, 50)
+loadingIcon.Position = UDim2.new(0.5, -25, 0.65, 0)
+loadingIcon.BackgroundTransparency = 1
+loadingIcon.ZIndex = 1000000
+loadingIcon.Parent = bg
+
+-- Punkte erzeugen
+local dots = {}
+local dotCount = 8
+for i = 1, dotCount do
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 8, 0, 8)
+    dot.AnchorPoint = Vector2.new(0.5, 0.5)
+    dot.Position = UDim2.new(0.5, math.cos(math.rad(i * 360 / dotCount)) * 20,
+                              0.5, math.sin(math.rad(i * 360 / dotCount)) * 20)
+    dot.BackgroundColor3 = Color3.new(1, 1, 1)
+    dot.BorderSizePixel = 0
+    dot.ZIndex = 1000000
+    dot.Parent = loadingIcon
+    table.insert(dots, dot)
+end
+
+-- Phasen-Definitionen (neue Zeiten)
+local phases = {
+    {name = "Loading Script", duration = 35},
+    {name = "Loading Data", duration = 20},
+    {name = "Loading GUI", duration = 10}
+}
+
+-- Gesamtzeit berechnen
+local totalDuration = 0
+for _, phase in ipairs(phases) do
+    totalDuration = totalDuration + phase.duration
+end
+
+-- Rotation Animation separat starten
+local rotating = true
+task.spawn(function()
+    while rotating do
+        loadingIcon.Rotation = (loadingIcon.Rotation + 6) % 360
+        task.wait(1 / 60) -- 60 FPS
+    end
+end)
+
+-- Lade-Animation mit Phasen
+local elapsed = 0
+for _, phase in ipairs(phases) do
+    loadingText.Text = phase.name
+    local steps = phase.duration * 20 -- 20 Schritte pro Sekunde
+    for i = 1, steps do
+        elapsed += (1 / 20)
+        local percent = math.floor((elapsed / totalDuration) * 100)
+        percentText.Text = percent .. "%"
+        loadingBar.Size = UDim2.new(elapsed / totalDuration, 0, 1, 0)
+        task.wait(1 / 20)
+    end
+end
+
+-- Abschluss
+percentText.Text = "100%"
+loadingBar.Size = UDim2.new(1, 0, 1, 0)
+task.wait(0.5)
+
+-- Rotation stoppen und GUI entfernen
+rotating = false
+ScreenGui:Destroy()
